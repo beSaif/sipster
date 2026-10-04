@@ -18,29 +18,37 @@ const IOS_TAPS: Record<Haptic, number[]> = {
   warning: [0, 120, 240],
 };
 
-let iosSwitch: HTMLLabelElement | null = null;
-
+// A fresh switch per tap, clicked through its label, then removed. It has to stay rendered
+// (no display:none) and must be clicked while the tap is still being handled.
 function iosTap(): void {
-  if (!iosSwitch) {
-    iosSwitch = document.createElement('label');
-    iosSwitch.setAttribute('aria-hidden', 'true');
-    iosSwitch.style.cssText = 'position:fixed;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;';
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.setAttribute('switch', '');
-    input.tabIndex = -1;
-    iosSwitch.append(input);
-    document.body.append(iosSwitch);
+  const label = document.createElement('label');
+  label.setAttribute('aria-hidden', 'true');
+  label.style.cssText = 'position:fixed;left:-100px;top:0;width:1px;height:1px;overflow:hidden;opacity:0.01;';
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.setAttribute('switch', '');
+  input.tabIndex = -1;
+  input.style.appearance = 'auto';
+  label.append(input);
+  document.body.append(label);
+  try {
+    label.click();
+  } finally {
+    label.remove();
   }
-  iosSwitch.click();
 }
 
 /** Plays a haptic. Call it synchronously from a user gesture; iOS ignores it otherwise. */
 export function haptic(kind: Haptic = 'tap'): void {
-  if (typeof navigator.vibrate === 'function') {
-    navigator.vibrate(PATTERNS[kind]);
-  } else if (isIOS()) {
-    IOS_TAPS[kind].forEach((delay) => (delay ? setTimeout(iosTap, delay) : iosTap()));
+  try {
+    // Check iOS first: if Safari ever exposes a no-op navigator.vibrate we'd lose haptics there.
+    if (isIOS()) {
+      IOS_TAPS[kind].forEach((delay) => (delay ? setTimeout(iosTap, delay) : iosTap()));
+    } else if (typeof navigator.vibrate === 'function') {
+      navigator.vibrate(PATTERNS[kind]);
+    }
+  } catch {
+    // Haptics are a nicety; never let them break a tap.
   }
 }
 
