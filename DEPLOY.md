@@ -66,7 +66,11 @@ Phones subscribed on the old address need to turn nudges off and on again.
 
 ## Updating
 
+The repo is connected to Cloudflare, so every push to `main` builds and deploys the app
+and Worker automatically. `npm run deploy` still works for a manual deploy.
+
+Migrations aren't applied by the automatic deploy. When `migrations/` gets a new file:
+
 ```bash
-npm run deploy                 # new app or worker code
-npm run db:migrate             # only when migrations/ has a new file
+npm run db:migrate
 ```
