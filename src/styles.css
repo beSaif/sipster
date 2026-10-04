@@ -23,6 +23,10 @@
 
 html, body { margin: 0; background: var(--cream); color: var(--ink); }
 
+/* No pinch or double-tap zoom; it feels like an app, not a page. */
+html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+* { touch-action: manipulation; }
+
 body {
   font-family: var(--round);
   -webkit-font-smoothing: antialiased;

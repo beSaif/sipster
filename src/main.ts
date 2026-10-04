@@ -7,6 +7,7 @@ import '@fontsource/pixelify-sans/600.css';
 import '@fontsource/pixelify-sans/700.css';
 import './styles.css';
 
+import { blockZoom, watchTaps } from './haptics';
 import { watchInstallPrompt } from './platform';
 import { syncPush } from './push';
 import { getSettings } from './store';
@@ -38,6 +39,8 @@ async function route(): Promise<void> {
 }
 
 watchInstallPrompt();
+watchTaps();
+blockZoom();
 window.addEventListener('hashchange', () => void route());
 void route();
 

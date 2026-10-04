@@ -1,5 +1,6 @@
 import { inWindow, localMinutes } from '../../shared/schedule';
 import { ICONS, el, esc, refs, toast } from '../dom';
+import { haptic } from '../haptics';
 import { lineFor, moodFor } from '../mood';
 import { pushSupport } from '../platform';
 import { enablePush, syncPush } from '../push';
@@ -52,7 +53,7 @@ export function mountHome(root: HTMLElement): () => void {
     r.cups.innerHTML = s.cups
       .map(
         (ml, i) => `
-        <button class="cup btn" type="button" data-cup="${i}">
+        <button class="cup btn" type="button" data-cup="${i}" data-haptic="none">
           ${CUP_ICONS[i]}
           <span class="cup-name">${CUP_NAMES[i]}</span>
           <span class="cup-ml">${fmt(ml)} ml</span>
@@ -150,9 +151,12 @@ export function mountHome(root: HTMLElement): () => void {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cup]');
     if (!btn || !settings || busy) return;
     busy = true;
+    const ml = settings.cups[Number(btn.dataset.cup)];
+    const before = today.reduce((n, sip) => n + sip.ml, 0);
+    // Fire before any await so iOS still counts it as part of the tap.
+    haptic(before < settings.goalMl && before + ml >= settings.goalMl ? 'success' : 'tap');
     try {
-      await addSip(settings.cups[Number(btn.dataset.cup)]);
-      navigator.vibrate?.(15);
+      await addSip(ml);
       sippingUntil = Date.now() + 1600;
       await refresh();
       setTimeout(render, 1650);

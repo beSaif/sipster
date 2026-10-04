@@ -1,4 +1,5 @@
 import { ICONS, el, esc, refs, toast } from '../dom';
+import { haptic } from '../haptics';
 import { canPromptInstall, isIOS, isStandalone, onInstallPromptChange, promptInstall, pushSupport } from '../platform';
 import { disablePush, enablePush, sendTestNudge, syncPush } from '../push';
 import {
@@ -121,7 +122,7 @@ export function mountSettings(root: HTMLElement): () => void {
           <button class="btn secondary" type="button" data-act="export">Export backup</button>
           <button class="btn secondary" type="button" data-act="import">Import backup</button>
           <button class="btn secondary" type="button" data-act="intro">Replay intro</button>
-          <button class="btn danger" type="button" data-act="reset">Reset today</button>
+          <button class="btn danger" type="button" data-act="reset" data-haptic="none">Reset today</button>
         </div>
       </section>`;
   }
@@ -181,6 +182,7 @@ export function mountSettings(root: HTMLElement): () => void {
         location.hash = '#/intro';
         return;
       case 'reset':
+        haptic('warning');
         if (confirm('Delete everything you logged today? Gerald will act like nothing happened.')) {
           await deleteSipsSince(startOfDay());
           void syncPush();
