@@ -12,8 +12,7 @@
     {
       "binding": "DB",
       "database_name": "sipster",
-      // Replace with the id printed by `npx wrangler d1 create sipster` (see DEPLOY.md).
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "8bc32e8a-7d61-4971-acdb-af630b58b9b5",
       "migrations_dir": "migrations"
     }
   ],
