@@ -61,8 +61,14 @@ instead, also set `npx wrangler secret put VAPID_SUBJECT` to `mailto:you@example
 
 ## Custom domain (optional)
 
-In the Cloudflare dashboard: Workers & Pages → sipster → Settings → Domains & Routes.
-Phones subscribed on the old address need to turn nudges off and on again.
+Sipster is served at `sipster.codesaif.dev` through the `routes` entry in `wrangler.jsonc`;
+Cloudflare creates the DNS record and certificate on deploy. `workers_dev` is set to `true`
+there so the workers.dev address keeps working too. To use another domain, change the
+pattern (the zone must be in the same Cloudflare account).
+
+Each address is its own app as far as phones are concerned: drinks, settings and
+notification permission don't carry over, so on a new address you install and allow
+nudges again.
 
 ## Updating
 
