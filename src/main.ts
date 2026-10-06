@@ -54,8 +54,10 @@ async function route(): Promise<void> {
   // Back from Google: trade the one-time code for a session, then drop it from the URL.
   const claim = query.get('claim');
   if (claim) {
-    await claimSession(claim);
+    const claimed = await claimSession(claim);
     query.delete('claim');
+    // An expired code is only a problem when this browser holds no session either.
+    if (!claimed && (await loadAccount()).status !== 'in') query.set('error', 'failed');
     const rest = query.toString();
     replaceHash(rest ? `${hash}?${rest}` : hash);
   }
@@ -73,14 +75,14 @@ watchInstallPrompt();
 watchTaps();
 blockZoom();
 window.addEventListener('hashchange', () => void route());
-void route();
 
-// Account: probe the session, keep daily totals flowing while signed in.
+// Account: keep daily totals flowing while signed in; probe the session once the first route (and
+// any sign-in claim in it) has settled.
 onAccount((s) => {
   setTotalsEnabled(s.status === 'in');
   if (s.status === 'in') void syncTotals({ full: true });
 });
-void loadAccount();
+void route().then(() => loadAccount());
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') void refreshAccount();
 });

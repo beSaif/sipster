@@ -4,7 +4,6 @@
 
 import type { Me, User } from '../shared/api';
 import { api, isApiError, setUnauthorizedHandler } from './api';
-import { currentSubscription } from './push';
 
 export type AccountState = { status: 'loading' } | { status: 'out' } | { status: 'in'; user: User; unread: number };
 
@@ -64,9 +63,13 @@ function signedOut(): void {
 
 /** Asks the server who is signed in. Offline with a cached account: trust the cache. */
 export async function loadAccount(): Promise<AccountState> {
+  const before = state;
   try {
     signedIn(await api.me({ quiet401: true }));
   } catch (err) {
+    // A claim that finished while this request was out already signed the person in; a 401 from the
+    // older request must not undo that (on iPhone the first request has no cookie yet).
+    if (state !== before && state.status === 'in') return state;
     const cached = isApiError(err) && err.code !== 'unauthorized' ? readCache() : null;
     if (cached) set({ status: 'in', user: cached.user, unread: cached.unread });
     else signedOut();
@@ -105,10 +108,21 @@ export async function refreshAccount(): Promise<void> {
   }
 }
 
+/** This phone's push endpoint, if it has one. Never waits long: without a service worker (dev) there is none. */
+async function pushEndpoint(): Promise<string | undefined> {
+  if (!('serviceWorker' in navigator)) return undefined;
+  try {
+    const reg = await Promise.race([navigator.serviceWorker.getRegistration(), new Promise<undefined>((r) => setTimeout(() => r(undefined), 1500))]);
+    return (await reg?.pushManager.getSubscription())?.endpoint;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Ends the session; tells the server which phone this is so it stops sending social pushes here. */
 export async function signOut(): Promise<void> {
-  const sub = await currentSubscription().catch(() => null);
-  await api.logout(sub ? { endpoint: sub.endpoint } : {}).catch(() => undefined);
+  const endpoint = await pushEndpoint();
+  await api.logout(endpoint ? { endpoint } : {}).catch(() => undefined);
   signedOut();
 }
 
