@@ -75,8 +75,7 @@ set up.
 2. Create an OAuth client of type **Web application** with these authorized redirect URIs:
    - `https://sipster.codesaif.dev/api/auth/google/callback`
    - `https://sipster.<your-subdomain>.workers.dev/api/auth/google/callback`
-   - for development, `http://127.0.0.1:8787/api/auth/google/callback` and
-     `http://localhost:5173/api/auth/google/callback`
+   - for development, `http://127.0.0.1:8787/api/auth/google/callback`
 
    Every address you serve the app from needs its callback here, or Google refuses the sign-in.
 3. Store the client id and secret (paste each one when asked):

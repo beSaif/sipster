@@ -80,8 +80,9 @@ node scripts/e2e-push.ts         # fake phone + fake push service
 hot reload on :5173 and the real API behind it.
 
 Signing in locally needs a Google OAuth client ([DEPLOY.md](DEPLOY.md), step 6) with
-`http://127.0.0.1:8787/api/auth/google/callback` and
-`http://localhost:5173/api/auth/google/callback` among its redirect URIs. Put its
+`http://127.0.0.1:8787/api/auth/google/callback` among its redirect URIs, and happens on
+http://127.0.0.1:8787: `worker:dev` pins the Worker to that origin (`--local-upstream`), so the
+callback always points there, also through the :5173 proxy. Put its
 `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.dev.vars` (`.dev.vars.example` shows the
 shape; `npm run vapid -- --dev-vars` adds the placeholder lines and keeps whatever you filled
 in). Without them everything else works and the sign-in button says sign-in isn't set up.

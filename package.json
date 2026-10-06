@@ -12,7 +12,7 @@
     "vapid": "node scripts/gen-vapid.ts",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.sw.json && tsc -p worker/tsconfig.json && tsc -p tsconfig.worker-test.json",
     "test": "vitest run",
-    "worker:dev": "npm run build && wrangler dev --test-scheduled",
+    "worker:dev": "npm run build && wrangler dev --test-scheduled --local-upstream 127.0.0.1:8787",
     "db:migrate": "wrangler d1 migrations apply sipster --remote",
     "deploy": "npm run build && wrangler deploy",
     "test:unit": "vitest run --project unit",

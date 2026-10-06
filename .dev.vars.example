@@ -8,8 +8,8 @@ VAPID_PRIVATE_KEY=
 ALLOW_ANY_PUSH_HOST=true
 
 # Sign in with Google: an OAuth client of type "Web application" from the Google Cloud console
-# (DEPLOY.md, step 6), with http://127.0.0.1:8787/api/auth/google/callback and
-# http://localhost:5173/api/auth/google/callback among its authorized redirect URIs.
+# (DEPLOY.md, step 6), with http://127.0.0.1:8787/api/auth/google/callback among its authorized
+# redirect URIs (npm run worker:dev pins the Worker to that origin).
 # Leave them empty and everything else works; the sign-in button then says sign-in isn't set up.
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
