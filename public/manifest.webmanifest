@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Sipster",
   "short_name": "Sipster",
-  "description": "Drink water, feed Gerald. A pixel hamster that reminds you to stay hydrated. Everything stays on your phone.",
+  "description": "Drink water, feed Gerald, and see which of your friends is winning. A pixel hamster that reminds you to stay hydrated. Your drinks stay on your phone.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

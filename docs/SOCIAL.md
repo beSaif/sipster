@@ -180,9 +180,12 @@ development, `http://127.0.0.1:8787/api/auth/google/callback` and
 `SIGNUPS_ENABLED="false"` closes sign-ups. `GOOGLE_AUTH_URL` / `GOOGLE_TOKEN_URL` exist only so tests
 can point at a stand-in.
 
-Deploying this feature: push to `main` (deploys), then `npm run db:migrate` for `0002_accounts.sql`,
-then set the two secrets. Until the secrets exist, `/api/auth/google/start` answers 500 and the app's
-sign-in button explains that sign-in is not set up.
+Shipping this feature, in this order: 1) `npm run db:migrate` applies `0002_accounts.sql` to the live
+database while the old Worker still runs (the migration only adds tables and a nullable column, so
+the old Worker is unaffected); 2) merge to `main`, which deploys; 3) `npx wrangler secret put` the two
+Google secrets, before or after the merge. Merging before migrating would break `/api/sync` until the
+migration lands, because the new Worker writes `devices.user_id`. Until the secrets exist,
+`/api/auth/google/start` answers 500 and the app's sign-in button explains that sign-in is not set up.
 
 ## 9. Tests
 
