@@ -13,6 +13,16 @@ const TEST_GOOGLE = { GOOGLE_CLIENT_ID: 'sipster-test-client', GOOGLE_CLIENT_SEC
 
 export default defineConfig(async () => {
   const migrations = await readD1Migrations(fileURLToPath(new URL('./migrations', import.meta.url)));
+  // The Worker in workerd with a real D1; `vars` adds to or overrides the bindings (the closed-sign-ups project).
+  const workerd = (vars: Record<string, string>) =>
+    cloudflareTest({
+      wrangler: { configPath: './wrangler.jsonc' },
+      miniflare: {
+        // The bundled workerd lags Cloudflare by a few weeks; the deployed Worker keeps wrangler.jsonc's date.
+        compatibilityDate: '2026-08-22',
+        bindings: { TEST_MIGRATIONS: migrations, ...TEST_VAPID, ...TEST_GOOGLE, ALLOW_ANY_PUSH_HOST: 'true', ...vars },
+      },
+    });
   return {
     test: {
       projects: [
@@ -24,19 +34,18 @@ export default defineConfig(async () => {
           },
         },
         {
-          plugins: [
-            cloudflareTest({
-              wrangler: { configPath: './wrangler.jsonc' },
-              miniflare: {
-                // The bundled workerd lags Cloudflare by a few weeks; the deployed Worker keeps wrangler.jsonc's date.
-                compatibilityDate: '2026-08-22',
-                bindings: { TEST_MIGRATIONS: migrations, ...TEST_VAPID, ...TEST_GOOGLE, ALLOW_ANY_PUSH_HOST: 'true' },
-              },
-            }),
-          ],
+          plugins: [workerd({})],
           test: {
             name: 'worker',
             include: ['test/worker/**/*.test.ts'],
+            setupFiles: ['test/worker/setup.ts'],
+          },
+        },
+        {
+          plugins: [workerd({ SIGNUPS_ENABLED: 'false' })],
+          test: {
+            name: 'worker-closed',
+            include: ['test/worker-closed/**/*.test.ts'],
             setupFiles: ['test/worker/setup.ts'],
           },
         },

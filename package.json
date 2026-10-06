@@ -16,7 +16,7 @@
     "db:migrate": "wrangler d1 migrations apply sipster --remote",
     "deploy": "npm run build && wrangler deploy",
     "test:unit": "vitest run --project unit",
-    "test:worker": "vitest run --project worker",
+    "test:worker": "vitest run --project worker --project worker-closed",
     "db:migrate:local": "wrangler d1 migrations apply sipster --local"
   },
   "dependencies": {
