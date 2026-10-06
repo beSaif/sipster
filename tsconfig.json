@@ -13,5 +13,5 @@
     "noUnusedLocals": true
   },
   "include": ["src", "shared", "test", "scripts", "types", "vite.config.ts", "vite.sw.config.ts", "vitest.config.ts"],
-  "exclude": ["src/sw.ts"]
+  "exclude": ["src/sw.ts", "test/worker"]
 }

@@ -28,3 +28,20 @@ export const TEST_NUDGE: Nudge = {
   title: 'Testing, testing… *tap tap*',
   body: 'Gerald can reach you. Nudges are working.',
 };
+
+// --- Friends ----------------------------------------------------------------
+
+export type SocialKind = 'friend_request' | 'friend_accepted' | 'goal_reached';
+
+/** Title and body for a social notification about `@username`. Used for in-app items and pushes alike. */
+export function socialCopy(kind: SocialKind, username: string): Nudge {
+  const who = `@${username}`;
+  switch (kind) {
+    case 'friend_request':
+      return { title: `${who} wants to be cage-mates.`, body: 'Accept, and you can see who drinks more. Gerald is already judging.' };
+    case 'friend_accepted':
+      return { title: `${who} accepted your request.`, body: 'You’re cage-mates now. May the most hydrated hamster win.' };
+    case 'goal_reached':
+      return { title: `${who} hit their water goal.`, body: 'Their hamster is a moist little king. Yours is watching.' };
+  }
+}
