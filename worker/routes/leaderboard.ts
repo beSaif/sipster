@@ -50,7 +50,9 @@ leaderboardRoutes.get('/', async (c) => {
   const friendIds = `SELECT CASE WHEN requester_id = ?1 THEN addressee_id ELSE requester_id END
                        FROM friendships WHERE (requester_id = ?1 OR addressee_id = ?1) AND status = 'accepted'`;
   const [members, totals] = await Promise.all([
-    c.env.DB.prepare(`SELECT id, username FROM users WHERE username IS NOT NULL AND (id = ?1 OR id IN (${friendIds}))`).bind(me).all<Person>(),
+    c.env.DB.prepare(`SELECT id, username FROM users WHERE username IS NOT NULL AND (id = ?1 OR id IN (${friendIds}))`)
+      .bind(me)
+      .all<Person>(),
     c.env.DB.prepare(
       `SELECT user_id, day, ml, goal_ml FROM daily_totals
         WHERE day >= ?2 AND day <= ?3 AND (user_id = ?1 OR user_id IN (${friendIds}))

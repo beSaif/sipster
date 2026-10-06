@@ -191,7 +191,8 @@ migration lands, because the new Worker writes `devices.user_id`. Until the secr
 
 - `npm run test:unit`: the existing node tests (`test/*.test.ts`).
 - `npm run test:worker`: Worker tests in workerd with a real D1 (`@cloudflare/vitest-pool-workers`,
-  `test/worker/**`). Migrations are applied per test file; Google's token endpoint is stood in for with
-  a `fetch` mock (see `test/worker/helpers.ts`). Covers sign-in, sessions, username rules, friends,
+  `test/worker/**`). Migrations are applied per test file and one in-memory D1 serves the whole run, so
+  tests mint unique rows or reset their tables; Google's token endpoint is stood in for with a `fetch`
+  mock (see `test/worker/helpers.ts`). Covers sign-in, sessions, username rules, friends,
   totals and goal notifications, leaderboard maths, notifications, device linking.
 - `npm run typecheck` covers the app, the service worker, the Worker and the Worker tests.

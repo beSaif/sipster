@@ -89,7 +89,9 @@ friendsRoutes.post('/request', async (c) => {
     .bind(me.id)
     .first<{ n: number }>();
   if ((pending?.n ?? 0) >= MAX_PENDING_OUTGOING) throw new ApiError('rate_limited', 'Too many requests are waiting for an answer');
-  await c.env.DB.prepare(`INSERT INTO friendships (requester_id, addressee_id, status, created_at, updated_at) VALUES (?, ?, 'pending', ?, ?)`)
+  await c.env.DB.prepare(
+    `INSERT INTO friendships (requester_id, addressee_id, status, created_at, updated_at) VALUES (?, ?, 'pending', ?, ?)`,
+  )
     .bind(me.id, them.id, now, now)
     .run();
   await notify(c.env, executionCtxOf(c), { userId: them.id, kind: 'friend_request', actorId: me.id, actorUsername: nameOf(me) });
@@ -125,7 +127,9 @@ friendsRoutes.delete('/:id', async (c) => {
   const me = c.var.user.id;
   const them = c.req.param('id');
   await c.env.DB.batch([
-    c.env.DB.prepare(`DELETE FROM friendships WHERE (requester_id = ?1 AND addressee_id = ?2) OR (requester_id = ?2 AND addressee_id = ?1)`).bind(me, them),
+    c.env.DB.prepare(
+      `DELETE FROM friendships WHERE (requester_id = ?1 AND addressee_id = ?2) OR (requester_id = ?2 AND addressee_id = ?1)`,
+    ).bind(me, them),
     c.env.DB.prepare(
       `DELETE FROM notifications WHERE kind = 'friend_request'
         AND ((user_id = ?2 AND actor_id = ?1) OR (user_id = ?1 AND actor_id = ?2))`,

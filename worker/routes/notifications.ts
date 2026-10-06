@@ -23,7 +23,9 @@ interface NotificationRow {
 }
 
 export async function unreadCount(env: Env, userId: string): Promise<number> {
-  const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL').bind(userId).first<{ n: number }>();
+  const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL')
+    .bind(userId)
+    .first<{ n: number }>();
   return row?.n ?? 0;
 }
 

@@ -64,8 +64,9 @@ totalsRoutes.put('/', async (c) => {
     ),
   );
 
-  // Goal reached: the total crossed the line today or yesterday. Older days are history, not news.
-  const recent = new Set([today, addDays(today, -1)]);
+  // Goal reached: the total crossed the line on a day within one of today in UTC, so every time zone's
+  // today counts (local dates run from UTC-12 to UTC+14). Older days are history, not news.
+  const recent = new Set([addDays(today, -1), today, addDays(today, 1)]);
   const crossed = days.filter((d) => {
     const prev = before.get(d.day);
     return recent.has(d.day) && d.ml >= d.goal_ml && (!prev || prev.ml < prev.goal_ml);
@@ -74,10 +75,16 @@ totalsRoutes.put('/', async (c) => {
   return c.body(null, 204);
 });
 
-/** A `goal_reached` notification per friend for each of `days` not announced before (once per day, however often the line is re-crossed). */
+/**
+ * A `goal_reached` notification per friend for each of `days` not announced before: once per day,
+ * however often the line is re-crossed.
+ */
 async function tellFriends(env: Env, ctx: WaitUntil | undefined, meId: string, myName: string, days: string[]): Promise<void> {
   const [announced, friends] = await Promise.all([
-    env.DB.prepare(`SELECT DISTINCT ref FROM notifications WHERE actor_id = ? AND kind = 'goal_reached' AND ref IN (SELECT value FROM json_each(?))`)
+    env.DB.prepare(
+      `SELECT DISTINCT ref FROM notifications
+        WHERE actor_id = ? AND kind = 'goal_reached' AND ref IN (SELECT value FROM json_each(?))`,
+    )
       .bind(meId, JSON.stringify(days))
       .all<{ ref: string }>(),
     env.DB.prepare(
@@ -91,7 +98,9 @@ async function tellFriends(env: Env, ctx: WaitUntil | undefined, meId: string, m
   const inputs: NotifyInput[] = [];
   for (const day of days) {
     if (done.has(day)) continue;
-    for (const friend of friends.results) inputs.push({ userId: friend.id, kind: 'goal_reached', actorId: meId, actorUsername: myName, ref: day });
+    for (const friend of friends.results) {
+      inputs.push({ userId: friend.id, kind: 'goal_reached', actorId: meId, actorUsername: myName, ref: day });
+    }
   }
   await notifyMany(env, ctx, inputs);
 }
