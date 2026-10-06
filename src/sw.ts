@@ -2,7 +2,9 @@
 // Sipster service worker: offline app shell, push notifications, and the
 // "Log a glass" / "Snooze" buttons on Android notifications.
 
+import type { PushPayload } from '../shared/api';
 import { b64urlDecode } from '../worker/webpush';
+import { syncTotals } from './social';
 import { addSip, getSettings } from './store';
 import { api, nudgeState, scheduleFrom, syncSubscription } from './sync';
 
@@ -63,10 +65,13 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+/** A `PushPayload` (shared/api.ts) as it arrives: every field optional, since old or odd pushes happen. */
 interface PushMessage {
-  type?: 'nudge' | 'test';
+  type?: PushPayload['type'];
   title?: string;
   body?: string;
+  /** Social pushes: where a tap goes, e.g. '/#/inbox'. */
+  url?: string;
 }
 
 self.addEventListener('push', (event) => {
@@ -77,6 +82,18 @@ self.addEventListener('push', (event) => {
         msg = event.data?.json() ?? {};
       } catch {
         msg = { body: event.data?.text() };
+      }
+      if (msg.type === 'social') {
+        // Friend requests and co.: shown as sent, no action buttons; a tap opens the inbox.
+        await self.registration.showNotification(msg.title ?? 'Gerald has news.', {
+          body: msg.body ?? 'Something happened in the cage.',
+          icon: '/icons/icon-192.png',
+          badge: '/icons/badge-96.png',
+          tag: 'sipster-social',
+          renotify: true,
+          data: { type: 'social', url: typeof msg.url === 'string' ? msg.url : '/#/inbox' },
+        } as NotificationOptions);
+        return;
       }
       const settings = await getSettings();
       const glass = settings.cups[1];
@@ -104,6 +121,17 @@ async function tellClients(): Promise<void> {
   clients.forEach((c) => c.postMessage({ type: 'sips-changed' }));
 }
 
+/** The hash route a social push asks for, from its `url`; anything odd goes to the inbox. */
+function hashOf(url: unknown): string {
+  try {
+    const hash = new URL(String(url), self.location.origin).hash;
+    if (hash.startsWith('#/')) return hash;
+  } catch {
+    // Not a URL at all.
+  }
+  return '#/inbox';
+}
+
 self.addEventListener('notificationclick', (event) => {
   const n = event.notification;
   n.close();
@@ -114,16 +142,25 @@ self.addEventListener('notificationclick', (event) => {
         await addSip(n.data?.glass ?? (await getSettings()).cups[1]);
         await tellClients();
         if (sub) await syncSubscription(sub).catch(() => undefined);
+        await syncTotals().catch(() => undefined);
         return;
       }
       if (event.action === 'snooze') {
         if (sub) await api('/api/snooze', { endpoint: sub.endpoint, minutes: 15 }).catch(() => undefined);
         return;
       }
+      // Social pushes carry a url ('/#/inbox'); nudges just open the app.
+      const social = n.data?.type === 'social' || typeof n.data?.url === 'string';
+      const hash = social ? hashOf(n.data?.url) : null;
       const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       const open = clients.find((c) => new URL(c.url).origin === self.location.origin);
-      if (open) await open.focus();
-      else await self.clients.openWindow('/');
+      if (open) {
+        await open.focus();
+        // The page listens for this and sets location.hash (main.ts).
+        if (hash) open.postMessage({ type: 'open', hash });
+      } else {
+        await self.clients.openWindow(hash ? `/${hash}` : '/');
+      }
     })(),
   );
 });

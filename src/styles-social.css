@@ -1,1 +1,95 @@
 /* Leaderboard, friends, inbox and the home-screen badges (agent D). */
+
+:root { --gold: #f5b82e; }
+
+/* --- home: trophy, bell with badge, settings ------------------------------ */
+
+.home .topbar > div:first-child { min-width: 0; }
+.topbar-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.icon-btn.has-badge { position: relative; }
+.badge {
+  position: absolute; top: -10px; right: -10px;
+  min-width: 22px; height: 22px; padding: 0 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--ink); color: var(--cream); border: 2px solid var(--cream);
+  font: 700 12px/1 var(--pixel);
+}
+
+/* --- shared by the friends and inbox screens ------------------------------ */
+
+.social-list { display: flex; flex-direction: column; gap: 18px; padding-bottom: 8px; }
+.social-list .card { display: flex; flex-direction: column; gap: 14px; }
+.social-list .card h2 { margin: 0; }
+.card.pitch canvas { align-self: center; }
+.card.empty { align-items: center; text-align: center; padding: 28px 16px; color: var(--muted); }
+.card.empty svg { width: 40px; height: 40px; }
+.segmented.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.note.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.note.row .link-btn { min-height: 36px; margin: -6px -6px -6px 0; flex-shrink: 0; }
+
+.rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.person-row { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 4px 0; border-top: 2px solid var(--ink); }
+.person-row:first-child { border-top: 0; padding-top: 0; }
+.person-row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 16px/1.2 var(--round); }
+.row-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+
+/* --- leaderboard ---------------------------------------------------------- */
+
+.board-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.board-row {
+  display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: 'rank who ml' 'rank bar pct';
+  column-gap: 10px; row-gap: 8px; align-items: center;
+  padding: 10px; border: 3px solid var(--ink); background: var(--paper);
+}
+.board-row.week { grid-template-areas: 'rank who ml' 'rank bar pct' 'rank hits hits'; }
+.board-row.me { background: var(--note); }
+.board-row.leader { box-shadow: 4px 4px 0 var(--gold); }
+.board-row .rank {
+  grid-area: rank; position: relative; width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border: 3px solid var(--ink); background: var(--paper); font: 700 18px/1 var(--pixel);
+}
+.board-row.leader .rank { background: var(--gold); }
+/* A pixel crown (3px pixels) hovering over the leader's rank. */
+.board-row.leader .rank::before {
+  content: ''; position: absolute; left: 50%; top: -11px; width: 3px; height: 3px; margin-left: -7.5px; background: var(--ink);
+  box-shadow: 6px 0 0 var(--ink), 12px 0 0 var(--ink), 0 3px 0 var(--ink), 3px 3px 0 var(--ink), 6px 3px 0 var(--ink), 9px 3px 0 var(--ink), 12px 3px 0 var(--ink);
+}
+.board-row .who { grid-area: who; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.board-row .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 16px/1.2 var(--round); }
+.chip.you { font-size: 12px; padding: 3px 5px; background: var(--ink); color: var(--cream); }
+.board-row .ml { grid-area: ml; font: 700 13px/1 var(--round); color: var(--muted); white-space: nowrap; }
+.board-row .ml b { font: 700 18px/1 var(--pixel); color: var(--ink); }
+.board-row .bar { grid-area: bar; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 2px; height: 14px; }
+.board-row .bar i { border: 2px solid var(--ink); background: #eef3f4; }
+.board-row .bar i.on { background: var(--water); }
+.board-row .bar i.over { background: var(--water-dark); }
+.board-row .pct { grid-area: pct; min-width: 44px; text-align: right; font: 600 15px/1 var(--pixel); }
+.board-row .hits { grid-area: hits; font: 700 12px/1.2 var(--round); color: var(--muted); }
+
+/* --- add a friend --------------------------------------------------------- */
+
+.add-friend { display: flex; gap: 10px; }
+.at-field { flex: 1; min-width: 0; display: flex; align-items: center; height: 48px; border: 3px solid var(--ink); background: var(--paper); }
+.at-field:focus-within { outline: 3px solid var(--water); outline-offset: 2px; }
+.at-field .at { padding-left: 10px; font: 600 18px/1 var(--pixel); color: var(--muted); }
+.at-field input {
+  flex: 1; min-width: 0; height: 100%; border: 0; border-radius: 0; padding: 0 10px 0 4px; background: transparent;
+  font: 600 18px/1 var(--pixel); color: var(--ink); -webkit-appearance: none; appearance: none;
+}
+.at-field input:focus { outline: none; }
+.add-friend .btn { min-height: 48px; padding: 0 14px; font-size: 16px; border-width: 3px; box-shadow: 3px 3px 0 var(--ink); flex-shrink: 0; }
+
+/* --- inbox ---------------------------------------------------------------- */
+
+.inbox-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.inbox-item {
+  display: flex; flex-direction: column; gap: 8px; padding: 12px 14px;
+  background: var(--paper); border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+}
+.inbox-item.unread { background: var(--note); border-left-width: 12px; }
+.inbox-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.inbox-title { font: 800 16px/1.3 var(--round); }
+.inbox-time { flex-shrink: 0; white-space: nowrap; font: 600 12px/1.3 var(--round); color: var(--muted); }
+.inbox-body { font: 600 14px/1.45 var(--round); color: var(--text-2); }
+.inbox-actions { display: flex; align-items: center; gap: 4px; margin-top: 2px; }

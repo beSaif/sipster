@@ -76,11 +76,14 @@ watchTaps();
 blockZoom();
 window.addEventListener('hashchange', () => void route());
 
-// Account: keep daily totals flowing while signed in; probe the session once the first route (and
-// any sign-in claim in it) has settled.
+// Account: keep daily totals flowing while signed in (the last 30 days once, when the account first
+// shows up); probe the session once the first route (and any sign-in claim in it) has settled.
+let wasIn = false;
 onAccount((s) => {
-  setTotalsEnabled(s.status === 'in');
-  if (s.status === 'in') void syncTotals({ full: true });
+  const isIn = s.status === 'in';
+  setTotalsEnabled(isIn);
+  if (isIn && !wasIn) void syncTotals({ full: true });
+  wasIn = isIn;
 });
 void route().then(() => loadAccount());
 document.addEventListener('visibilitychange', () => {

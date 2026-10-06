@@ -1,9 +1,11 @@
 import { inWindow, localMinutes } from '../../shared/schedule';
+import { account, onAccount, type AccountState } from '../account';
 import { ICONS, el, esc, refs, toast } from '../dom';
 import { haptic } from '../haptics';
 import { lineFor, moodFor } from '../mood';
 import { pushSupport } from '../platform';
 import { enablePush, syncPush } from '../push';
+import { syncTotals } from '../social';
 import { addSip, deleteSip, getSettings, lastSip, sipsSince, startOfDay, type Settings, type Sip } from '../store';
 import { createCage } from './cage';
 
@@ -20,7 +22,11 @@ export function mountHome(root: HTMLElement): () => void {
           <h1 class="logo">Sipster</h1>
           <p class="sub" data-ref="dayline"></p>
         </div>
-        <a class="icon-btn" href="#/settings" aria-label="Settings">${ICONS.sliders}</a>
+        <nav class="topbar-actions" aria-label="More">
+          <a class="icon-btn" href="#/friends" aria-label="Friends &amp; leaderboard">${ICONS.trophy}</a>
+          <a class="icon-btn has-badge" href="#/inbox" aria-label="Notifications" data-ref="inbox">${ICONS.bell}<span class="badge" data-ref="badge" aria-hidden="true" hidden></span></a>
+          <a class="icon-btn" href="#/settings" aria-label="Settings">${ICONS.sliders}</a>
+        </nav>
       </header>
       <div data-ref="cageSlot"></div>
       <section class="card status" aria-label="Today">
@@ -48,6 +54,14 @@ export function mountHome(root: HTMLElement): () => void {
   let last: Sip | null = null;
   let sippingUntil = 0;
   let busy = false;
+
+  // The bell's unread count, from the cached account state so it shows offline too.
+  function renderBadge(s: AccountState): void {
+    const n = s.status === 'in' ? s.unread : 0;
+    r.badge.hidden = n === 0;
+    r.badge.textContent = n > 99 ? '99+' : String(n);
+    r.inbox.setAttribute('aria-label', n > 0 ? `Notifications, ${n} unread` : 'Notifications');
+  }
 
   function renderCups(s: Settings): void {
     r.cups.innerHTML = s.cups
@@ -161,6 +175,7 @@ export function mountHome(root: HTMLElement): () => void {
       await refresh();
       setTimeout(render, 1650);
       void syncPush().then(refresh);
+      void syncTotals();
     } finally {
       busy = false;
     }
@@ -173,6 +188,7 @@ export function mountHome(root: HTMLElement): () => void {
     sippingUntil = 0;
     await refresh();
     void syncPush().then(refresh);
+    void syncTotals();
   });
 
   const onVisible = () => {
@@ -184,10 +200,13 @@ export function mountHome(root: HTMLElement): () => void {
   document.addEventListener('visibilitychange', onVisible);
   navigator.serviceWorker?.addEventListener('message', onMessage);
   const tick = window.setInterval(() => void refresh(), 30_000);
+  renderBadge(account());
+  const offAccount = onAccount(renderBadge);
 
   void refresh();
   return () => {
     clearInterval(tick);
+    offAccount();
     document.removeEventListener('visibilitychange', onVisible);
     navigator.serviceWorker?.removeEventListener('message', onMessage);
     cage.destroy();
