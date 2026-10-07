@@ -1,5 +1,5 @@
 // End-to-end check of the push worker against a fake push service.
-// 1. npm run vapid -- --dev-vars   2. npx wrangler d1 migrations apply sipster --local
+// 1. npm run vapid -- --dev-vars   2. npm run db:migrate:local
 // 3. npm run worker:dev            4. node scripts/e2e-push.ts
 //
 // Subscribes a fake phone, fires the cron, and decrypts what arrives exactly like a browser would.

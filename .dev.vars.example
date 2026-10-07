@@ -1,0 +1,15 @@
+# Local secrets for `npm run worker:dev` (wrangler dev). Copy to .dev.vars, which is git-ignored.
+# `npm run vapid -- --dev-vars` fills the three push lines in for you and leaves the rest alone.
+
+# Web Push keys for local nudges. Generate a local pair; never reuse the production one.
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+# Local only: lets the plain-http push service of scripts/e2e-push.ts subscribe. Not for production.
+ALLOW_ANY_PUSH_HOST=true
+
+# Sign in with Google: an OAuth client of type "Web application" from the Google Cloud console
+# (DEPLOY.md, step 6), with http://127.0.0.1:8787/api/auth/google/callback among its authorized
+# redirect URIs (npm run worker:dev pins the Worker to that origin).
+# Leave them empty and everything else works; the sign-in button then says sign-in isn't set up.
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=

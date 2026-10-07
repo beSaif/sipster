@@ -1,7 +1,10 @@
+import { account, onAccount, setUser, signOut, user } from '../account';
+import { api } from '../api';
 import { ICONS, el, esc, refs, toast } from '../dom';
 import { haptic } from '../haptics';
 import { canPromptInstall, isIOS, isStandalone, onInstallPromptChange, promptInstall, pushSupport } from '../platform';
 import { disablePush, enablePush, sendTestNudge, syncPush } from '../push';
+import { syncTotals } from '../social';
 import {
   deleteSipsSince,
   exportBackup,
@@ -11,6 +14,7 @@ import {
   startOfDay,
   type Settings,
 } from '../store';
+import { GOOGLE_G, accountKey, errorText } from './account';
 
 const INTERVALS = [30, 45, 60, 90];
 const CUP_NAMES = ['Sip', 'Glass', 'Bottle'];
@@ -23,6 +27,40 @@ const fromTime = (v: string) => {
 
 function toggle(id: string, on: boolean, label: string): string {
   return `<button class="switch" type="button" role="switch" id="${id}" aria-checked="${on}" aria-label="${esc(label)}"><span class="track"><span class="knob"></span></span></button>`;
+}
+
+/** The Account card: a sign-in link, or who is signed in with the friend-notifications switch. */
+function accountCard(pushOn: boolean): string {
+  const a = account();
+  if (a.status === 'loading') return '<section class="card"><h2>Account</h2><p class="help">Gerald is checking who’s here…</p></section>';
+  if (a.status === 'out') {
+    return `
+      <section class="card">
+        <h2>Account</h2>
+        <p class="help">Pick a username, add friends and see who’s leading.</p>
+        <a class="btn secondary" href="#/account">${GOOGLE_G} Sign in with Google</a>
+      </section>`;
+  }
+  const u = a.user;
+  return `
+    <section class="card">
+      <h2>Account</h2>
+      <div class="acct-row">
+        <p class="acct-name">${u.username ? `@${esc(u.username)}` : 'No username yet'}</p>
+        <p class="help">${esc(u.email)}</p>
+      </div>
+      <div class="setting">
+        <div>
+          <p class="label">Friend notifications</p>
+          <p class="help">A push when someone adds you, accepts, or hits their goal.${pushOn ? '' : ' Turn on push notifications above to get them on this phone.'}</p>
+        </div>
+        ${toggle('social', u.social_push, 'Friend notifications')}
+      </div>
+      <div class="two-col">
+        <a class="btn secondary" href="#/account">${u.username ? 'Manage account' : 'Pick a username'}</a>
+        <button class="btn secondary" type="button" data-act="signout">Sign out</button>
+      </div>
+    </section>`;
 }
 
 export function mountSettings(root: HTMLElement): () => void {
@@ -39,8 +77,11 @@ export function mountSettings(root: HTMLElement): () => void {
   root.replaceChildren(view);
 
   let s: Settings;
+  let accountBusy = false; // a sign-out or settings call is in flight
+  let shownAccount = ''; // accountKey() of the Account card on screen
 
   function render(): void {
+    shownAccount = accountKey(account());
     const support = pushSupport();
     const pushOn = s.pushEnabled && support === 'supported';
     const pushStatus =
@@ -91,6 +132,8 @@ export function mountSettings(root: HTMLElement): () => void {
         <button class="btn note-btn" type="button" data-act="test" ${pushOn ? '' : 'disabled'}>${ICONS.bell} Send a test nudge</button>
       </section>
 
+      ${accountCard(pushOn)}
+
       <section class="card">
         <h2>Cup sizes</h2>
         <div class="cup-edit">
@@ -117,7 +160,7 @@ export function mountSettings(root: HTMLElement): () => void {
 
       <section class="card">
         <h2>Your data</h2>
-        <p class="body small">Everything lives on this phone. No account, no tracking. The reminder server only knows your schedule and when you last drank — never how much. Clearing your browser data clears Gerald too, so export first.</p>
+        <p class="body small">Everything still lives on this phone: your drinks, your settings, no tracking. The reminder server only knows your schedule and when you last drank. With an account, your daily totals (ml and goal per day) are stored on the server and shown to accepted friends — the drinks themselves never leave. Clearing your browser data clears Gerald too, so export first.</p>
         <div class="two-col">
           <button class="btn secondary" type="button" data-act="export">Export backup</button>
           <button class="btn secondary" type="button" data-act="import">Import backup</button>
@@ -133,10 +176,38 @@ export function mountSettings(root: HTMLElement): () => void {
     if (opts.sync) void syncPush();
   }
 
+  async function toggleSocialPush(): Promise<void> {
+    const u = user();
+    if (!u || accountBusy) return;
+    accountBusy = true;
+    try {
+      const { user: next } = await api.updateAccountSettings({ social_push: !u.social_push });
+      setUser(next); // the card re-renders through onAccount
+      toast(next.social_push ? 'Friend notifications on. Gerald will pass notes.' : 'Friend notifications off. Gerald keeps the gossip to himself.');
+    } catch (err) {
+      toast(errorText(err));
+    } finally {
+      accountBusy = false;
+    }
+  }
+
+  async function signOutHere(btn: HTMLButtonElement): Promise<void> {
+    if (accountBusy) return;
+    accountBusy = true;
+    btn.disabled = true;
+    try {
+      await signOut();
+      toast('Signed out. Gerald will keep your drinks safe here.');
+    } finally {
+      accountBusy = false;
+    }
+  }
+
   r.content.addEventListener('click', async (e) => {
     const target = e.target as HTMLElement;
     const sw = target.closest<HTMLElement>('.switch');
     if (sw?.id === 'smart') return update({ smart: !s.smart }, { sync: true });
+    if (sw?.id === 'social') return toggleSocialPush();
     if (sw?.id === 'push') {
       if (s.pushEnabled) {
         await disablePush();
@@ -156,11 +227,18 @@ export function mountSettings(root: HTMLElement): () => void {
     const interval = target.closest<HTMLElement>('[data-interval]')?.dataset.interval;
     if (interval) return update({ intervalMin: Number(interval) }, { sync: true });
 
-    switch (target.closest<HTMLElement>('[data-act]')?.dataset.act) {
+    const act = target.closest<HTMLButtonElement>('[data-act]');
+    switch (act?.dataset.act) {
       case 'goal-':
-        return update({ goalMl: Math.max(500, s.goalMl - 250) }, { sync: true });
+        await update({ goalMl: Math.max(500, s.goalMl - 250) }, { sync: true });
+        void syncTotals();
+        return;
       case 'goal+':
-        return update({ goalMl: Math.min(6000, s.goalMl + 250) }, { sync: true });
+        await update({ goalMl: Math.min(6000, s.goalMl + 250) }, { sync: true });
+        void syncTotals();
+        return;
+      case 'signout':
+        return signOutHere(act);
       case 'test':
         return toast(await sendTestNudge());
       case 'install':
@@ -186,6 +264,7 @@ export function mountSettings(root: HTMLElement): () => void {
         if (confirm('Delete everything you logged today? Gerald will act like nothing happened.')) {
           await deleteSipsSince(startOfDay());
           void syncPush();
+          void syncTotals();
           toast('Today is wiped. Fresh start.');
         }
         return;
@@ -220,6 +299,7 @@ export function mountSettings(root: HTMLElement): () => void {
       s = await getSettings();
       render();
       void syncPush();
+      void syncTotals({ full: true });
       toast('Backup restored. Gerald remembers everything.');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'That file didn’t work.');
@@ -227,10 +307,17 @@ export function mountSettings(root: HTMLElement): () => void {
     (r.file as HTMLInputElement).value = '';
   });
 
-  const off = onInstallPromptChange(() => render());
+  const offInstall = onInstallPromptChange(() => render());
+  // Only the Account card depends on the account; skip changes that don't touch what it shows (an unread count).
+  const offAccount = onAccount((a) => {
+    if (s && accountKey(a) !== shownAccount) render();
+  });
   void getSettings().then((loaded) => {
     s = loaded;
     render();
   });
-  return off;
+  return () => {
+    offInstall();
+    offAccount();
+  };
 }

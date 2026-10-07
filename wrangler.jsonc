@@ -23,5 +23,6 @@
   // Check for due nudges every minute.
   "triggers": { "crons": ["* * * * *"] },
   "observability": { "enabled": true }
-  // VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY are secrets: `npm run vapid` prints the commands.
+  // Secrets: VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (`npm run vapid` prints the commands), and for
+  // Sign in with Google GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (DEPLOY.md, step 6).
 }

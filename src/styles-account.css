@@ -1,0 +1,56 @@
+/* Account screen, username picker, privacy page and the Account card in Settings (agent C). */
+
+/* --- account screen ------------------------------------------------------ */
+
+.account-body { display: flex; flex-direction: column; gap: 14px; }
+.acct-card { display: flex; flex-direction: column; gap: 12px; }
+.acct-card h2 { margin: 0; }
+.acct-quiet { text-align: center; padding: 32px 0; }
+.form-error { background: #fde3e4; border: 3px solid var(--danger); padding: 10px 12px; font: 700 14px/1.4 var(--round); color: var(--danger); }
+
+.signin-slot { display: flex; flex-direction: column; }
+.signin-slot > .help { min-height: 56px; display: flex; align-items: center; justify-content: center; }
+.btn.signin { width: 100%; }
+.btn.signin[aria-busy='true'] { opacity: 0.75; }
+.g-mark { flex-shrink: 0; display: block; }
+
+.acct-who { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.acct-name { font: 700 30px/1.1 var(--pixel); min-width: 0; overflow-wrap: anywhere; }
+.acct-email { margin-top: -6px; overflow-wrap: anywhere; }
+.acct-actions { display: flex; flex-direction: column; gap: 10px; }
+.acct-actions > .btn { width: 100%; }
+
+/* Text inputs look like the time and ml fields in Settings: 44px tall, 3px ink border, pixel font. */
+.acct-input, .at-input {
+  height: 44px; width: 100%; border: 3px solid var(--ink); border-radius: 0; background: var(--paper);
+  font: 600 18px/1 var(--pixel); color: var(--ink);
+}
+.acct-input { padding: 0 10px; -webkit-appearance: none; appearance: none; }
+.acct-input::placeholder, .at-input input::placeholder { color: #a9a5b4; font-weight: 500; }
+.at-input { display: flex; align-items: center; }
+.at-input .at { padding-left: 10px; color: var(--muted); }
+.at-input input {
+  flex: 1; min-width: 0; height: 100%; border: 0; border-radius: 0; padding: 0 10px 0 4px; background: transparent;
+  font: inherit; color: inherit; -webkit-appearance: none; appearance: none;
+}
+.at-input input:focus { outline: none; }
+.at-input:focus-within { outline: 3px solid var(--water); outline-offset: 2px; }
+.help.bad { color: var(--danger); }
+
+.acct-form { display: flex; flex-direction: column; gap: 10px; }
+.acct-confirm { display: flex; flex-direction: column; gap: 10px; border-top: 3px solid var(--ink); padding-top: 12px; }
+.acct-confirm-row { display: flex; gap: 10px; }
+.acct-confirm-row .btn { flex: 1; }
+
+/* --- privacy page -------------------------------------------------------- */
+
+.privacy .card { display: flex; flex-direction: column; gap: 10px; }
+.privacy .card h2 { margin: 0; font-size: 20px; line-height: 1.1; }
+.privacy ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font: 600 14px/1.45 var(--round); color: var(--text-2); }
+.privacy .btn.primary { width: 100%; }
+
+/* --- settings: the Account card ------------------------------------------ */
+
+.acct-row { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.acct-row .acct-name { font-size: 24px; }
+.acct-row .help { overflow-wrap: anywhere; }
