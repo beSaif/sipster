@@ -74,6 +74,7 @@ npm run vapid -- --dev-vars      # local push keys → .dev.vars (see .dev.vars.
 npm run db:migrate:local         # local D1: devices + the account tables
 npm run worker:dev               # http://127.0.0.1:8787, built app + API + cron
 node scripts/e2e-push.ts         # fake phone + fake push service
+node scripts/e2e-signin.ts       # Chromium: privacy page, account screen, sign-in leaves for Google
 ```
 
 `npm run dev` proxies `/api` to :8787, so with `npm run worker:dev` running next to it you get
