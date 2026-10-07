@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Drink water, feed Gerald. A pixel-hamster hydration reminder PWA.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

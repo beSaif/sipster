@@ -1,116 +1,75 @@
-# Sipster
+<p align="center">
+  <img src="public/icons/icon-512.png" width="120" alt="Gerald, a pixel hamster" />
+</p>
 
-Drink water, feed Gerald. Sipster is a pixel-hamster hydration reminder that runs as an
-installable web app on your phone. Every glass you log, Gerald gets a sip too. Drink too
-little and he turns to dust; drink too much and he becomes a water balloon.
+<h1 align="center">Sipster</h1>
 
-- **No account needed.** Drinks and settings live in IndexedDB on your phone.
-- **Push reminders that work when the app is closed**, via a tiny Cloudflare Worker that
-  only knows your reminder schedule and *when* you last drank.
-- **Friends, if you want them.** Sign in with Google to pick a username, add friends and see
-  who's leading. Only then do your daily totals (ml and goal, per day) reach the server;
-  individual drinks never do.
-- **Installable**: Android gets Chrome's own install sheet; iPhone gets an illustrated
-  Add to Home Screen guide (iPhone only allows push for home-screen apps).
+<p align="center">Drink water, feed Gerald.</p>
 
-## How it fits together
+I kept forgetting to drink water. Not dramatically, just the kind where you look up at 4pm and
+realise the only liquid you've had today is coffee. Every reminder app I tried, I muted within a
+week. So I made one with a hamster in it. His name is Gerald. He drinks when you drink, and if
+you forget him for too long he turns to dust. Turns out I'll happily ignore a notification, but I
+won't let a pixel hamster die.
 
-```
-phone (PWA, hash router)                       Cloudflare Worker (worker/, Hono) + D1
-├─ src/views/*      intro, home, settings,     ├─ serves dist/ (the app)
-│                   account, friends, inbox    ├─ /api/subscribe|sync|snooze|test|unsubscribe
-├─ src/store.ts     IndexedDB: drinks, settings├─ /api/auth/*: Google sign-in, sessions, username
-├─ src/sync.ts      sends schedule + timestamps├─ /api/friends/*: request, accept, decline, remove
-├─ src/account.ts   who is signed in (cached)  ├─ /api/leaderboard: you + friends, today / week
-├─ src/social.ts    sends daily totals         ├─ /api/totals: daily totals (ml + goal per day)
-└─ src/sw.ts        service worker: offline,   ├─ /api/notifications: list, mark read
-                    nudges, social pushes      ├─ D1: `devices` (push address, schedule, when you
-                                               │   last drank, next nudge), `users`, `sessions`,
-                                               │   `daily_totals`, `friendships`, `notifications`
-                                               └─ cron every minute → Web Push (worker/webpush.ts)
-shared/             sprite, schedule maths, Gerald's lines, API types and username rules,
-                    used by both sides
-```
+<p align="center">
+  <img src="docs/screenshots/intro.png" width="190" alt="Intro: this is Gerald" />
+  <img src="docs/screenshots/home.png" width="190" alt="Home: a happy Gerald at 63% of the goal" />
+  <img src="docs/screenshots/home-parched.png" width="190" alt="Home: a parched, dusty Gerald at 0%" />
+  <img src="docs/screenshots/settings.png" width="190" alt="Settings: goal, nudges, active hours" />
+</p>
 
-`shared/schedule.ts` decides when the next nudge is: one interval after your last drink
-(smart mode) or the last nudge, only inside your active hours, and nothing after you hit
-your goal until tomorrow.
+**Try it:** [sipster.codesaif.dev](https://sipster.codesaif.dev). Install it to your home screen,
+it's a PWA.
 
-The Worker is a [Hono](https://hono.dev) app. Everything to do with accounts, friends, the
-leaderboard and notifications is specified in [docs/SOCIAL.md](docs/SOCIAL.md); when the code
-and that document disagree, one of them is wrong.
+## What it does
 
-## Friends & leaderboard
+- Tap a glass, Gerald takes a sip. Skip a few and he dries out. Overdo it and he turns into a
+  water balloon.
+- Nudges arrive even with the app closed. They're timed from your last drink, stay inside your
+  waking hours, and stop once you've hit the day's goal.
+- No account. Your drinks never leave your phone.
+- Friends, if you want them. Sign in with Google, pick a username, add friends and see who's
+  leading today and this week. Only daily totals go to the server, never individual drinks.
+- Works as a real app on Android (install sheet) and iPhone (Add to Home Screen, with a guide).
 
-Signing in is optional and Google only. The first time, you pick a username; that username is
-the only thing anyone else can ever learn about you, and only by typing it exactly. Add a
-friend by their username and they get a request to accept or decline (if you both ask, you're
-cage-mates straight away). Friendships are mutual and nothing is public: you only ever see the
-totals of friends who accepted, and they only see yours.
-
-The leaderboard ranks you and your friends by percent of goal. **Today** is how much of the
-day's goal each of you has drunk so far. **This week** is that percentage averaged over the
-last seven days (a day without drinks counts as zero), plus how many of those days hit the
-goal. Ties go to whoever drank more. "Today" means everyone's own local date, so a friend in
-another time zone is compared by calendar day, as a daily score should be.
-
-For this to work, a signed-in phone sends its daily totals, ml and goal per day, after every
-drink (and the last 30 days once per app start, so a new account's week isn't empty). Friend
-requests, acceptances and a friend reaching their goal land in the inbox (the bell on the home
-screen) and, when the Account card's toggle is on, arrive as push notifications too. Gerald
-narrates.
-
-## Develop
+## Run it locally
 
 ```bash
 npm install
-npm run dev            # UI only, http://localhost:5173 (no push, no service worker)
+npm run vapid -- --dev-vars      # local push keys → .dev.vars
+npm run db:migrate:local         # local D1 database
+npm run worker:dev               # http://127.0.0.1:8787, app + API + cron
 ```
 
-Full stack locally (app + API + local database + cron):
+`npm run dev` on its own gives you hot reload on :5173 for UI work, with `/api` proxied to the
+Worker if it's running. Sign-in needs a Google OAuth client in `.dev.vars`
+(`.dev.vars.example` explains); without one, everything but friends works.
 
 ```bash
-npm run vapid -- --dev-vars      # local push keys → .dev.vars (see .dev.vars.example)
-npm run db:migrate:local         # local D1: devices + the account tables
-npm run worker:dev               # http://127.0.0.1:8787, built app + API + cron
-node scripts/e2e-push.ts         # fake phone + fake push service
-node scripts/e2e-signin.ts       # Chromium: privacy page, account screen, sign-in leaves for Google
-```
-
-`npm run dev` proxies `/api` to :8787, so with `npm run worker:dev` running next to it you get
-hot reload on :5173 and the real API behind it.
-
-Signing in locally needs a Google OAuth client ([DEPLOY.md](DEPLOY.md), step 6) with
-`http://127.0.0.1:8787/api/auth/google/callback` among its redirect URIs, and happens on
-http://127.0.0.1:8787: `worker:dev` pins the Worker to that origin (`--local-upstream`), so the
-callback always points there, also through the :5173 proxy. Put its
-`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.dev.vars` (`.dev.vars.example` shows the
-shape; `npm run vapid -- --dev-vars` adds the placeholder lines and keeps whatever you filled
-in). Without them everything else works and the sign-in button says sign-in isn't set up.
-
-Checks:
-
-```bash
-npm test               # node unit tests (encryption checked against the http_ece reference)
-                       # + Worker tests in workerd with a real D1 (@cloudflare/vitest-pool-workers)
-npm run test:worker    # only the Worker tests; npm run test:unit for only the node ones
+npm test               # unit tests + Worker tests in workerd with a real D1
 npm run typecheck
 ```
 
-Assets: `node scripts/gen-icons.ts` redraws the icons from the sprite;
-`node scripts/gen-screenshots.ts` re-captures the install-sheet screenshots (app must be running).
+## Under the hood
+
+A small TypeScript PWA (Vite, hash router, IndexedDB) and a [Hono](https://hono.dev) Worker on
+Cloudflare with D1. A cron trigger runs every minute and sends Web Push with VAPID and
+`aes128gcm` encryption written against the RFCs, no push library. `shared/` holds the sprite,
+Gerald's lines and the schedule maths both sides use.
+
+- [docs/DEPLOY.md](docs/DEPLOY.md): your own Sipster on Cloudflare's free plan in about ten
+  minutes.
+- [docs/SOCIAL.md](docs/SOCIAL.md): the contract for accounts, friends, the leaderboard and
+  notifications.
 
 ## Privacy
 
-Without an account, the Worker only ever holds a push address, your reminder schedule and when
-you last drank, enough to time the nudges and never how much. Signed in, the server also keeps
-your Google account id, your email (shown to nobody but you), your username, your daily totals
-(ml and goal per day), your friendships and your notifications. Individual drinks stay in
-IndexedDB either way. Sign-in is Google's OpenID Connect flow run by the Worker, with no Google
-script on the page. Deleting the account removes everything the server has about you; Gerald
-and your drinks stay on the phone. The full policy is at
-[`/privacy`](https://sipster.codesaif.dev/privacy).
+Without an account the server holds a push address, your reminder schedule and *when* you last
+drank, never how much. Signed in, it also keeps your Google id, email, username, daily totals,
+friendships and notifications. Deleting the account removes all of it. Gerald stays on your
+phone. Full policy at [`/privacy`](https://sipster.codesaif.dev/privacy).
 
-## Deploy
+## License
 
-See [DEPLOY.md](DEPLOY.md). About ten minutes on Cloudflare's free plan.
+[MIT](LICENSE)
