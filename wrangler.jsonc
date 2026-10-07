@@ -27,5 +27,5 @@
   "triggers": { "crons": ["* * * * *"] },
   "observability": { "enabled": true }
   // Secrets: VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (`npm run vapid` prints the commands), and for
-  // Sign in with Google GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (DEPLOY.md, step 6).
+  // Sign in with Google GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (docs/DEPLOY.md, step 6).
 }

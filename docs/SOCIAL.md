@@ -174,7 +174,7 @@ through so a sign-in redirect is never swallowed.
 
 Secrets (`npx wrangler secret put …`, or `.dev.vars` locally): `GOOGLE_CLIENT_ID`,
 `GOOGLE_CLIENT_SECRET` (an OAuth client of type *Web application* in the Google Cloud console, with
-`https://sipster.codesaif.dev/api/auth/google/callback`, the `workers.dev` address's callback and, for
+the production callback (`https://<your-domain>/api/auth/google/callback`), the `workers.dev` address's callback and, for
 development, `http://127.0.0.1:8787/api/auth/google/callback` among the authorized redirect URIs;
 `npm run worker:dev` pins the local Worker to that origin with `--local-upstream`, because wrangler
 would otherwise present local requests under the production host). Optional var

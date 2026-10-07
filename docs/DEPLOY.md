@@ -69,12 +69,12 @@ set up.
 
 1. In the [Google Cloud console](https://console.cloud.google.com), create a project and
    configure its **OAuth consent screen**: user type External, scopes `openid` and `email`,
-   app home page `https://sipster.codesaif.dev`, privacy policy
-   `https://sipster.codesaif.dev/privacy` (the app serves it there). While the app is in
+   app home page `https://sipster.<your-subdomain>.workers.dev` (or your own domain), privacy
+   policy at `/privacy` on that address (the app serves it there). While the app is in
    "Testing", only the test users you list can sign in; publishing it lifts that.
 2. Create an OAuth client of type **Web application** with these authorized redirect URIs:
-   - `https://sipster.codesaif.dev/api/auth/google/callback`
    - `https://sipster.<your-subdomain>.workers.dev/api/auth/google/callback`
+   - your custom domain's callback, if you set one up below
    - for development, `http://127.0.0.1:8787/api/auth/google/callback`
 
    Every address you serve the app from needs its callback here, or Google refuses the sign-in.
@@ -94,11 +94,11 @@ only Google accounts that already have a Sipster account get in.
 
 ## Custom domain (optional)
 
-Sipster is served at `sipster.codesaif.dev` through the `routes` entry in `wrangler.jsonc`;
-Cloudflare creates the DNS record and certificate on deploy. `workers_dev` is set to `true`
-there so the workers.dev address keeps working too. To use another domain, change the
-pattern (the zone must be in the same Cloudflare account) and update the home page, privacy
-policy and redirect URIs from step 6.
+The `routes` entry in `wrangler.jsonc` attaches my own domain to the Worker; Cloudflare
+creates the DNS record and certificate on deploy. **Change that pattern to a domain you own
+(the zone must be in your Cloudflare account) or remove the entry**, otherwise the deploy
+fails. `workers_dev` is `true` so the workers.dev address works either way. If you add a
+domain, update the home page, privacy policy and redirect URIs from step 6.
 
 Each address is its own app as far as phones are concerned: drinks, settings, notification
 permission and sign-in don't carry over, so on a new address you install, allow nudges and
@@ -106,8 +106,9 @@ sign in again.
 
 ## Updating
 
-The repo is connected to Cloudflare, so every push to `main` builds and deploys the app and
-Worker automatically. `npm run deploy` still works for a manual deploy.
+My copy of the repo is connected to Cloudflare Workers Builds, so every push to `main` builds
+and deploys automatically. On a fork, `npm run deploy` does the same by hand, or connect your
+own fork the same way in the Cloudflare dashboard.
 
 Migrations aren't applied by the automatic deploy, and the new Worker may need the new schema
 from its first request. So when a change adds a file to `migrations/`, migrate **first**, then
